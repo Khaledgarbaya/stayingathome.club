@@ -45,7 +45,6 @@ exports.handler = async (event, context) => {
       body: "Something is wrong",
     }
   }
-  console.log(JSON.stringify(result.data))
   return {
     statusCode: 200,
     body: "{}",
