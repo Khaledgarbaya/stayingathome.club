@@ -1,6 +1,6 @@
 import React from "react"
 import { Router } from "@reach/router"
-import Layout from "../components/Layout"
+import Layout from "../components/layout"
 import PrivateRoute from "../components/private-route"
 import Login from "../components/login"
 const Profile = () => <h1>Profile</h1>
