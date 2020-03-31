@@ -1,41 +1,56 @@
-const isBrowser = typeof window !== `undefined`
-
-const getUser = () =>
-  window.localStorage.gatsbyUser
-    ? JSON.parse(window.localStorage.gatsbyUser)
+import netlifyIdentity from "netlify-identity-widget"
+export const isBrowser = () => typeof window !== "undefined"
+export const getUser = () =>
+  isBrowser() && window.localStorage.getItem("gatsbyUser")
+    ? JSON.parse(window.localStorage.getItem("gatsbyUser"))
     : {}
+const setUser = user =>
+  window.localStorage.setItem("gatsbyUser", JSON.stringify(user))
 
-const setUser = user => (window.localStorage.gatsbyUser = JSON.stringify(user))
+export const handleLogin = callback => {
+  netlifyAuth.authenticate(() => {
+    setUser(netlifyIdentity.currentUser())
+    callback()
+  })
+}
 
-export const handleLogin = ({ username, password }) => {
-  if (!isBrowser) return false
-
-  if (username === `gatsby` && password === `demo`) {
-    console.log(`Credentials match! Setting the active user.`)
-    return setUser({
-      name: `Jim`,
-      legalName: `James K. User`,
-      email: `jim@example.org`,
+const netlifyAuth = {
+  isAuthenticated: false,
+  user: null,
+  authenticate(callback) {
+    this.isAuthenticated = true
+    netlifyIdentity.open()
+    netlifyIdentity.on("login", user => {
+      this.user = user
+      callback(user)
     })
-  }
-
-  return false
+    netlifyIdentity.on("init", user => {
+      this.user = user
+      callback(user)
+    })
+  },
+  signout(callback) {
+    this.isAuthenticated = false
+    netlifyIdentity.logout()
+    netlifyIdentity.on("logout", () => {
+      this.user = null
+      callback()
+    })
+  },
 }
 
 export const isLoggedIn = () => {
-  if (!isBrowser) return false
-
-  const user = getUser()
-
-  return !!user.email
+  return netlifyIdentity.currentUser() || netlifyAuth.isAuthenticated
+}
+export const logout = callback => {
+  setUser({})
+  netlifyAuth.signout(callback)
 }
 
-export const getCurrentUser = () => isBrowser && getUser()
+export const getCurrentUser = () => {
+  return netlifyIdentity.currentUser()
+}
 
-export const logout = callback => {
-  if (!isBrowser) return
-
-  console.log(`Ensuring the \`gatsbyUser\` property exists.`)
-  setUser({})
-  callback()
+export const updateUserInfo = async user_metadata => {
+  await netlifyIdentity.gotrue.currentUser().update({ data: user_metadata })
 }
